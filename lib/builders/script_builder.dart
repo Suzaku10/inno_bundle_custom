@@ -29,12 +29,12 @@ class ScriptBuilder {
     final exeName = config.exeName;
     final privileges = config.admin ? 'admin' : 'lowest';
     var installerIcon = config.installerIcon;
-    
-    // Determine architectures line. Default to omit if empty/null, else add it
     final arch = config.architecturesInstallIn64BitMode;
     final archStr = (arch != null && arch.isNotEmpty) 
         ? 'ArchitecturesInstallIn64BitMode=$arch\n' 
         : '';
+
+    final disableDirPageStr = config.disableDirPage ? 'DisableDirPage=auto\n' : '';
 
     final outputDir = p.joinAll([
       Directory.current.path,
@@ -84,6 +84,7 @@ WizardStyle=modern
 OutputDir=$outputDir
 PrivilegesRequired=$privileges
 $archStr
+$disableDirPageStr
 \n''';
   }
 

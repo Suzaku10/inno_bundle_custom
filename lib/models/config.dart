@@ -81,6 +81,9 @@ class Config {
   /// Whether to create an installer file.
   final bool installer;
 
+  /// Whether to disable the directory selection page.
+  final bool disableDirPage;
+
   /// Arguments to be passed to flutter build.
   final String? buildArgs;
 
@@ -119,6 +122,7 @@ class Config {
     this.type = BuildType.debug,
     this.app = true,
     this.installer = true,
+    this.disableDirPage = true,
   });
 
   /// The name of the executable file that is created with flutter build.
@@ -329,6 +333,13 @@ class Config {
       architecturesInstallIn64BitMode = null;
     }
 
+    if (inno['disable_dir_page'] != null && inno['disable_dir_page'] is! bool) {
+      CliLogger.exitError(
+          "$blockName.disable_dir_page attribute is invalid boolean value "
+          "in pubspec.yaml");
+    }
+    final bool disableDirPage = inno['disable_dir_page'] ?? true;
+
     return Config(
       buildArgs: buildArgs,
       id: id,
@@ -356,6 +367,7 @@ class Config {
       buildArgsList: buildArgsList,
       flavor: flavor,
       architecturesInstallIn64BitMode: architecturesInstallIn64BitMode,
+      disableDirPage: disableDirPage,
     );
   }
 

@@ -116,6 +116,9 @@ All attributes should be under `inno_bundle` in `pubspec.yaml`.
     globally on the end user machine.
   - `false`: Don't require elevated privileges during installation. App will
     install into user-specific folder.
+- `disable_dir_page`: (`true` or `false`) Defaults to `true`.
+  - `true`: Disables the directory selection page in the installer.
+  - `false`: Allows the user to select the installation directory.
 - `license_file`: A path relative to the project that points to a text license file, if not provided, `inno_bundle` will look up for `LICENSE` file in your project root folder. Otherwise, it is set to an empty string.
 - `changelog`: A path relative to the project that points to a markdown changelog file. A copy will be provided alongside the `installer.exe` ending with `.txt`.
 - `installer_name`: Optionally set a specific name for the generated installer `.exe` file. Defaults to using `outputbaseFolder` or `{AppName}-x86_64-{Version}-Installer`.
