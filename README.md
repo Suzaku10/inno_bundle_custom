@@ -222,6 +222,4 @@ Stack Overflow issue</a>.
 If you encounter any
 issues <a href="https://github.com/hahouari/inno_bundle/issues" target="_blank">
 please report them here</a>.
-#   i n n o _ b u n d l e _ c u s t o m 
- 
- 
+#
