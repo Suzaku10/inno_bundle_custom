@@ -36,6 +36,7 @@ void main(List<String> arguments) async {
     ..addFlag(BuildType.release.name, negatable: false)
     ..addFlag(BuildType.profile.name, negatable: false)
     ..addFlag(BuildType.debug.name, negatable: false, help: 'Default flag')
+    ..addOption('flavor', help: 'Build flavor (e.g. staging, dev)')
     ..addFlag('app', defaultsTo: true, help: 'Build app')
     ..addFlag('installer', defaultsTo: true, help: 'Build installer')
     ..addOption("build-args", help: "Appended to `flutter build`")
@@ -52,6 +53,7 @@ void main(List<String> arguments) async {
   final envs = parsedArgs['envs'] as bool;
   final hf = parsedArgs['hf'] as bool;
   final help = parsedArgs['help'] as bool;
+  final flavor = parsedArgs['flavor'] as String?;
 
   if (hf) print(START_MESSAGE);
 
@@ -66,6 +68,7 @@ void main(List<String> arguments) async {
     installer: parsedArgs['installer'],
     buildArgs: parsedArgs['build-args'],
     appVersion: parsedArgs['app-version'],
+    flavor: flavor,
   );
 
   if (envs) {

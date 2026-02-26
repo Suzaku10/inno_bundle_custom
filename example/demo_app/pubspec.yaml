@@ -107,3 +107,19 @@ inno_bundle:
       name: "example.dll"
       required: false
       source: "project" # Options: project, system32
+
+inno_bundle_staging:
+  id: 12345678-0582-1e06-b073-b5d1161f6fff
+  publisher: Hocine Abdellatif Houari Staging
+  architectures_install_in_64_bit_mode: ""
+  changelog: assets/CHANGELOG.md
+inno_bundle_dev:
+  id: 11111111-0582-1e06-b073-b5d1161f6fff
+  publisher: Hocine Abdellatif Houari Dev
+  exename: DemoAppDev.exe
+
+inno_bundle_prod:
+  id: 22222222-0582-1e06-b073-b5d1161f6fff
+  publisher: Hocine Abdellatif Houari Prod
+  exename: DemoAppProd.exe
+  architectures_install_in_64_bit_mode: "x64"

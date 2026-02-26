@@ -63,6 +63,26 @@ class InstallerBuilder {
     );
     final exitCode = await process.exitCode;
     if (exitCode != 0) exit(exitCode);
-    return Directory.current;
+
+    final outputDir = Directory(p.joinAll([
+      Directory.current.path,
+      ...installerBuildDir,
+      config.type.dirName,
+      config.outputFolderName,
+    ]));
+
+    if (config.changelogFile.isNotEmpty) {
+      final changelogFile = File(config.changelogFile);
+      if (changelogFile.existsSync()) {
+        outputDir.createSync(recursive: true);
+        final newChangelogPath = p.join(outputDir.path, 'CHANGELOG.txt');
+        changelogFile.copySync(newChangelogPath);
+        CliLogger.success("Changelog copied to $newChangelogPath");
+      } else {
+        CliLogger.warning("Changelog file not found at ${changelogFile.path}");
+      }
+    }
+
+    return outputDir;
   }
 }

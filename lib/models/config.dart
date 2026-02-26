@@ -84,9 +84,18 @@ class Config {
   /// Arguments to be passed to flutter build.
   final String? buildArgs;
 
+  /// The flavor to build (e.g. dev, staging, prod).
+  final String? flavor;
+
+  /// The value for ArchitecturesInstallIn64BitMode in the Inno Setup script.
+  /// If null or empty, the line will be omitted from the script (defaults to x86).
+  final String? architecturesInstallIn64BitMode;
+
   /// Creates a [Config] instance with default values.
   const Config({
     required this.buildArgs,
+    required this.flavor,
+    required this.architecturesInstallIn64BitMode,
     required this.id,
     required this.pubspecName,
     required this.name,
@@ -115,6 +124,12 @@ class Config {
   /// The name of the executable file that is created with flutter build.
   String get exePubspecName => "$pubspecName.exe";
 
+  /// The dynamic folder name for the installer output.
+  String get outputFolderName {
+    final flavorSuffix = (flavor != null && flavor!.isNotEmpty) ? "-$flavor" : "";
+    return "$name$flavorSuffix-$version";
+  }
+
   /// Creates a [Config] instance from a JSON map, typically read from `pubspec.yaml`.
   ///
   /// Validates the configuration and exits with an error if invalid values are found.
@@ -125,19 +140,28 @@ class Config {
     bool installer = true,
     required String? buildArgs,
     required String? appVersion,
+    required String? flavor,
   }) {
-    if (json['inno_bundle'] is! Map<String, dynamic>) {
-      CliLogger.exitError("inno_bundle section is missing from pubspec.yaml.");
+    final blockName = flavor != null && flavor.isNotEmpty 
+        ? 'inno_bundle_$flavor' 
+        : 'inno_bundle';
+
+    if (json[blockName] is! Map<String, dynamic>) {
+      if (flavor != null && flavor.isNotEmpty) {
+        CliLogger.exitError("$blockName section is missing from pubspec.yaml.");
+      } else {
+        CliLogger.exitError("inno_bundle section is missing from pubspec.yaml.");
+      }
     }
-    final Map<String, dynamic> inno = json['inno_bundle'];
+    final Map<String, dynamic> inno = json[blockName];
 
     if (inno['id'] is! String) {
       CliLogger.exitError(
-          "inno_bundle.id attribute is missing from pubspec.yaml. "
+          "$blockName.id attribute is missing from pubspec.yaml. "
           "Run `dart run inno_bundle:guid` to generate a new one, "
           "then put it in your pubspec.yaml.");
     } else if (!Uuid.isValidUUID(fromString: inno['id'])) {
-      CliLogger.exitError("inno_bundle.id from pubspec.yaml is not valid. "
+      CliLogger.exitError("$blockName.id from pubspec.yaml is not valid. "
           "Run `dart run inno_bundle:guid` to generate a new one, "
           "then put it in your pubspec.yaml.");
     }
@@ -149,7 +173,7 @@ class Config {
     final String pubspecName = json['name'];
 
     if (inno['name'] != null && !validFilenameRegex.hasMatch(inno['name'])) {
-      CliLogger.exitError("inno_bundle.name from pubspec.yaml is not valid. "
+      CliLogger.exitError("$blockName.name from pubspec.yaml is not valid. "
           "`${inno['name']}` is not a valid file name.");
     }
     final String name = inno['name'] ?? pubspecName;
@@ -166,7 +190,7 @@ class Config {
     final String description = inno['description'] ?? json['description'];
 
     if ((inno['publisher'] ?? json['maintainer']) is! String) {
-      CliLogger.exitError("maintainer or inno_bundle.publisher attributes are "
+      CliLogger.exitError("maintainer or $blockName.publisher attributes are "
           "missing from pubspec.yaml.");
     }
     final String publisher = inno['publisher'] ?? json['maintainer'];
@@ -176,7 +200,7 @@ class Config {
     final updatesUrl = (inno['updates_url'] as String?) ?? url;
 
     if (inno['installer_icon'] != null && inno['installer_icon'] is! String) {
-      CliLogger.exitError("inno_bundle.installer_icon attribute is invalid "
+      CliLogger.exitError("$blockName.installer_icon attribute is invalid "
           "in pubspec.yaml.");
     }
     final installerIcon = inno['installer_icon'] != null
@@ -188,18 +212,18 @@ class Config {
     if (installerIcon != defaultInstallerIconPlaceholder &&
         !File(installerIcon).existsSync()) {
       CliLogger.exitError(
-          "inno_bundle.installer_icon attribute value is invalid, "
+          "$blockName.installer_icon attribute value is invalid, "
           "`$installerIcon` file does not exist.");
     }
 
     if (inno['languages'] != null && inno['languages'] is! List<String>) {
-      CliLogger.exitError("inno_bundle.languages attribute is invalid "
+      CliLogger.exitError("$blockName.languages attribute is invalid "
           "in pubspec.yaml, only a list of strings is allowed.");
     }
     final languages = (inno['languages'] as List<String>?)?.map((l) {
           final language = Language.getByNameOrNull(l);
           if (language == null) {
-            CliLogger.exitError("problem in inno_bundle.languages attribute "
+            CliLogger.exitError("problem in $blockName.languages attribute "
                 "in pubspec.yaml, language `$l` is not supported.");
           }
           return language!;
@@ -208,13 +232,13 @@ class Config {
 
     if (inno['admin'] != null && inno['admin'] is! bool) {
       CliLogger.exitError(
-          "inno_bundle.admin attribute is invalid boolean value "
+          "$blockName.admin attribute is invalid boolean value "
           "in pubspec.yaml");
     }
     final bool admin = inno['admin'] ?? true;
 
     if (inno['license_file'] != null && inno['license_file'] is! String) {
-      CliLogger.exitError("inno_bundle.license_file attribute is invalid "
+      CliLogger.exitError("$blockName.license_file attribute is invalid "
           "in pubspec.yaml.");
     }
 
@@ -228,7 +252,7 @@ class Config {
         File(licenseFilePath).existsSync() ? licenseFilePath : '';
 
     if (inno['changelog'] != null && inno['changelog'] is! String) {
-      CliLogger.exitError("inno_bundle.changelog attribute is invalid "
+      CliLogger.exitError("$blockName.changelog attribute is invalid "
           "in pubspec.yaml.");
     }
 
@@ -242,19 +266,22 @@ class Config {
         File(changelogFilePath).existsSync() ? changelogFilePath : '';
 
     final String dirName = inno['dirname'] ?? name;
-    final String outputBaseFolder = inno['outputbaseFolder'] ?? '${camelCase(name)}-x86_64-$version-Installer';
+    
+    // allow installer_name with outputbaseFolder as fallback
+    final String outputBaseFolder = inno['installer_name'] ?? inno['outputbaseFolder'] ?? '${camelCase(name)}-x86_64-$version-Installer';
+    
     final String exeName = inno['exename'] ?? "$name.exe";
 
     if (inno['vc_redist'] != null &&
         inno['vc_redist'] is! bool &&
         inno['vc_redist'] != "download") {
-      CliLogger.exitError("inno_bundle.vc_redist attribute is invalid value "
+      CliLogger.exitError("$blockName.vc_redist attribute is invalid value "
           "in pubspec.yaml");
     }
     final vcRedist = VcRedistMode.fromOption(inno['vc_redist'] ?? true);
 
     if (inno['dlls'] != null && inno['dlls'] is! List) {
-      CliLogger.exitError("inno_bundle.dlls attribute is invalid "
+      CliLogger.exitError("$blockName.dlls attribute is invalid "
           "in pubspec.yaml, only a list of dll entries is allowed.");
     }
     final dlls = ((inno['dlls'] ?? []) as List)
@@ -270,12 +297,16 @@ class Config {
         .toList(growable: false);
 
     if (inno['build_args'] != null && inno['build_args'] is! List) {
-      CliLogger.exitError("inno_bundle.build_args attribute is invalid "
+      CliLogger.exitError("$blockName.build_args attribute is invalid "
           "in pubspec.yaml, only a list of strings is allowed.");
     }
     final buildArgsList = ((inno['build_args'] ?? []) as List)
         .map((e) => e.toString())
         .toList(growable: false);
+
+    final architecturesInstallIn64BitMode = inno['architectures_install_in_64_bit_mode'] != null 
+        ? inno['architectures_install_in_64_bit_mode'].toString() 
+        : 'x64';
 
     return Config(
       buildArgs: buildArgs,
@@ -302,6 +333,8 @@ class Config {
       vcRedist: vcRedist,
       dlls: dlls,
       buildArgsList: buildArgsList,
+      flavor: flavor,
+      architecturesInstallIn64BitMode: architecturesInstallIn64BitMode,
     );
   }
 
@@ -314,6 +347,7 @@ class Config {
     bool installer = true,
     required String? buildArgs,
     required String? appVersion,
+    String? flavor,
   }) {
     const filePath = 'pubspec.yaml';
     final yamlMap = loadYaml(File(filePath).readAsStringSync()) as Map;
@@ -326,6 +360,7 @@ class Config {
       installer: installer,
       buildArgs: buildArgs,
       appVersion: appVersion,
+      flavor: flavor,
     );
   }
 

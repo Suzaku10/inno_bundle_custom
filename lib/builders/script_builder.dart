@@ -29,11 +29,18 @@ class ScriptBuilder {
     final exeName = config.exeName;
     final privileges = config.admin ? 'admin' : 'lowest';
     var installerIcon = config.installerIcon;
+    
+    // Determine architectures line. Default to omit if empty/null, else add it
+    final arch = config.architecturesInstallIn64BitMode;
+    final archStr = (arch != null && arch.isNotEmpty) 
+        ? 'ArchitecturesInstallIn64BitMode=$arch\n' 
+        : '';
 
     final outputDir = p.joinAll([
       Directory.current.path,
       ...installerBuildDir,
       config.type.dirName,
+      config.outputFolderName,
     ]);
 
     // save default icon into temp directory to use its path.
@@ -76,7 +83,7 @@ SolidCompression=yes
 WizardStyle=modern
 OutputDir=$outputDir
 PrivilegesRequired=$privileges
-ArchitecturesInstallIn64BitMode=x64
+$archStr
 DisableDirPage=auto
 \n''';
   }
@@ -120,9 +127,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
         // flutter build, to the inno_bundle.name property value (if provided)
         if (p.basename(filePath) == config.exePubspecName &&
             config.exeName != config.exePubspecName) {
-          print("Renamed \${config.exePubspecName} \${config.exeName}");
+          print("Renamed ${config.exePubspecName} ${config.exeName}");
           section += "Source: \"$filePath\"; DestDir: \"{app}\"; "
-              "DestName: \"\${config.exeName}\"; Flags: ignoreversion\n";
+              "DestName: \"${config.exeName}\"; Flags: ignoreversion\n";
         } else {
           section += "Source: \"$filePath\"; DestDir: \"{app}\"; "
               "Flags: ignoreversion\n";
@@ -174,7 +181,7 @@ Name: "{autodesktop}\\{#MyAppName}"; Filename: "{app}\\{#MyAppExeName}"; Tasks: 
   String _run() {
     return '''
 [Run]
-Filename: "{app}\\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange('{#MyAppName}', '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 \n''';
   }
 
