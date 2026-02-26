@@ -119,7 +119,7 @@ All attributes should be under `inno_bundle` in `pubspec.yaml`.
 - `license_file`: A path relative to the project that points to a text license file, if not provided, `inno_bundle` will look up for `LICENSE` file in your project root folder. Otherwise, it is set to an empty string.
 - `changelog`: A path relative to the project that points to a markdown changelog file. A copy will be provided alongside the `installer.exe` ending with `.txt`.
 - `installer_name`: Optionally set a specific name for the generated installer `.exe` file. Defaults to using `outputbaseFolder` or `{AppName}-x86_64-{Version}-Installer`.
-- `architectures_install_in_64_bit_mode`: Configure `x86` vs `x64` execution architecture behavior in Inno Setup. Set to `"x64"` or `"arm64"` to require 64-bit install. Or explicitly supply `""` (empty string) to perform an `x86` (32-bit) install. Defaults to `"x64"`.
+- `architectures_install_in_64_bit_mode`: Configure `x86` vs `x64` execution architecture behavior in Inno Setup. Set to `true` or `"x64"` to require 64-bit install. Set to `false` or explicitly supply `""` (empty string) to perform an `x86` (32-bit) install, which defaults the installation folder to `Program Files (x86)`. Defaults to `false` (x86).
 
 <span id="attributes-more-1"><sup>1</sup></span> Only **.ico** images were
 tested.
@@ -161,6 +161,14 @@ dart run inno_bundle:build --release --flavor=staging
 This tells the tool to look for `inno_bundle_staging` in `pubspec.yaml` instead of `inno_bundle`.
 
 Other mode flags are `--profile`, `--debug` (Default).
+
+You can also override the app version properties dynamically:
+
+```ps
+dart run inno_bundle:build --build-name=1.2.3 --build-number=45
+```
+
+This takes precedence over the `version` configured in `pubspec.yaml` and will output `1.2.3+45` in the installer.
 
 ## Other configuration examples
 

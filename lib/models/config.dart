@@ -140,6 +140,8 @@ class Config {
     bool installer = true,
     required String? buildArgs,
     required String? appVersion,
+    String? buildName,
+    String? buildNumber,
     required String? flavor,
   }) {
     final blockName = flavor != null && flavor.isNotEmpty 
@@ -178,10 +180,22 @@ class Config {
     }
     final String name = inno['name'] ?? pubspecName;
 
-    if ((appVersion ?? inno['version'] ?? json['version']) is! String) {
+    String? resolvedVersion = appVersion;
+    if (buildName != null || buildNumber != null) {
+      final pubspecVersion = (inno['version'] ?? json['version'])?.toString();
+      final defaultName = pubspecVersion?.split('+').first ?? '1.0.0';
+      final defaultNumber = pubspecVersion?.contains('+') == true 
+          ? pubspecVersion!.split('+').sublist(1).join('+') 
+          : '1';
+      final finalName = buildName ?? defaultName;
+      final finalNumber = buildNumber ?? defaultNumber;
+      resolvedVersion = '$finalName+$finalNumber';
+    }
+
+    if ((resolvedVersion ?? inno['version'] ?? json['version']) is! String) {
       CliLogger.exitError("version attribute is missing from pubspec.yaml.");
     }
-    final String version = appVersion ?? inno['version'] ?? json['version'];
+    final String version = resolvedVersion ?? inno['version'] ?? json['version'];
 
     if ((inno['description'] ?? json['description']) is! String) {
       CliLogger.exitError(
@@ -304,9 +318,16 @@ class Config {
         .map((e) => e.toString())
         .toList(growable: false);
 
-    final architecturesInstallIn64BitMode = inno['architectures_install_in_64_bit_mode'] != null 
-        ? inno['architectures_install_in_64_bit_mode'].toString() 
-        : 'x64';
+    final rawArch = inno['architectures_install_in_64_bit_mode'];
+    String? architecturesInstallIn64BitMode;
+    if (rawArch is bool) {
+      architecturesInstallIn64BitMode = rawArch ? 'x64' : null;
+    } else if (rawArch != null) {
+      final archStr = rawArch.toString();
+      architecturesInstallIn64BitMode = archStr == 'x86' ? null : archStr;
+    } else {
+      architecturesInstallIn64BitMode = null;
+    }
 
     return Config(
       buildArgs: buildArgs,
@@ -347,6 +368,8 @@ class Config {
     bool installer = true,
     required String? buildArgs,
     required String? appVersion,
+    String? buildName,
+    String? buildNumber,
     String? flavor,
   }) {
     const filePath = 'pubspec.yaml';
@@ -360,6 +383,8 @@ class Config {
       installer: installer,
       buildArgs: buildArgs,
       appVersion: appVersion,
+      buildName: buildName,
+      buildNumber: buildNumber,
       flavor: flavor,
     );
   }

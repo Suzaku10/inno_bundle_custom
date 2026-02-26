@@ -41,6 +41,8 @@ void main(List<String> arguments) async {
     ..addFlag('installer', defaultsTo: true, help: 'Build installer')
     ..addOption("build-args", help: "Appended to `flutter build`")
     ..addOption("app-version", help: "Override app version")
+    ..addOption("build-name", help: "Override app build name")
+    ..addOption("build-number", help: "Override app build number")
     ..addFlag(
       'envs',
       defaultsTo: false,
@@ -68,6 +70,8 @@ void main(List<String> arguments) async {
     installer: parsedArgs['installer'],
     buildArgs: parsedArgs['build-args'],
     appVersion: parsedArgs['app-version'],
+    buildName: parsedArgs['build-name'],
+    buildNumber: parsedArgs['build-number'],
     flavor: flavor,
   );
 
