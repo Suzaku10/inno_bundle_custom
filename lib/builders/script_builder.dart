@@ -84,14 +84,6 @@ WizardStyle=modern
 OutputDir=$outputDir
 PrivilegesRequired=$privileges
 $archStr
-DisableDirPage=auto
-\n''';
-  }
-
-  String _installDelete() {
-    return '''
-[InstallDelete]
-Type: filesandordirs; Name: "{app}\\*"
 \n''';
   }
 
@@ -225,7 +217,6 @@ end;
     CliLogger.info("Generating ISS script...");
     final script = scriptHeader +
         _setup() +
-        _installDelete() +
         _languages() +
         _tasks() +
         _files() +
