@@ -13,6 +13,34 @@ class AppBuilder {
   /// Creates an instance of [AppBuilder] with the given [config].
   AppBuilder(this.config);
 
+  String _evaluateBuildArg(String arg) {
+    if (!arg.contains('\$(')) return arg;
+
+    final regExp = RegExp(r'\$\((.*?)\)');
+    return arg.replaceAllMapped(regExp, (match) {
+      final command = match.group(1);
+      if (command == null || command.trim().isEmpty) return match.group(0)!;
+
+      try {
+        final result = Process.runSync(
+          'cmd.exe',
+          ['/c', command],
+          runInShell: true,
+        );
+        if (result.exitCode == 0) {
+          return (result.stdout as String).trim();
+        } else {
+          CliLogger.warning(
+              "Failed to evaluate shell command '$command': \${result.stderr}");
+          return match.group(0)!;
+        }
+      } catch (e) {
+        CliLogger.warning("Error evaluating shell command '$command': $e");
+        return match.group(0)!;
+      }
+    });
+  }
+
   /// Builds the app using Flutter and returns the path to the build directory.
   ///
   /// If [config.app] is `false` and a valid build already exists, it skips the
@@ -42,6 +70,12 @@ class AppBuilder {
       }
     }
 
+    final evaluatedArgsList = 
+        config.buildArgsList.map(_evaluateBuildArg).toList();
+    final evaluatedArgs = config.buildArgs != null 
+        ? _evaluateBuildArg(config.buildArgs!) 
+        : null;
+
     final process = await Process.start(
       "flutter",
       [
@@ -54,8 +88,8 @@ class AppBuilder {
         buildName,
         '--build-number',
         buildNumber,
-        ...config.buildArgsList,
-        if (config.buildArgs != null) config.buildArgs!,
+        ...evaluatedArgsList,
+        if (evaluatedArgs != null) evaluatedArgs,
       ],
       runInShell: true,
       workingDirectory: Directory.current.path,
