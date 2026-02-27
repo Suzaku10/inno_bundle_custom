@@ -34,7 +34,9 @@ class ScriptBuilder {
         ? 'ArchitecturesInstallIn64BitMode=$arch\n' 
         : '';
 
-    final disableDirPageStr = config.disableDirPage ? 'DisableDirPage=auto\n' : '';
+    final disableDirPageStr = config.disableDirPage
+        ? 'DisableDirPage=yes\nDirExistsWarning=no\n'
+        : 'DisableDirPage=no\n';
 
     final outputDir = p.joinAll([
       Directory.current.path,
